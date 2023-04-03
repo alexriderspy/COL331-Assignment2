@@ -106,6 +106,7 @@ extern int sys_uptime(void);
 extern int sys_exec_time(void);
 extern int sys_deadline(void);
 extern int sys_rate(void);
+extern int sys_sched_policy(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -132,6 +133,7 @@ static int (*syscalls[])(void) = {
 [SYS_exec_time] sys_exec_time,
 [SYS_deadline] sys_deadline,
 [SYS_rate] sys_rate,
+[SYS_sched_policy] sys_sched_policy,
 };
 
 void

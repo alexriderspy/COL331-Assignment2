@@ -85,10 +85,10 @@ sys_exec_time(void)
   /* get syscall argument */
   if (argint(0, &pid) < 0)
       return -1;
-  if (argint(0, &exec_time) < 0)
+  if (argint(1, &exec_time) < 0)
       return -1;
-  set_exec_time(pid, exec_time);
-  return 0;
+  int ret = set_exec_time(pid, exec_time);
+  return ret;
 }
 
 int
@@ -98,10 +98,10 @@ sys_deadline(void)
 
   if (argint(0, &pid) < 0)
       return -1;
-  if (argint(0, &deadline) < 0)
+  if (argint(1, &deadline) < 0)
       return -1;
-  set_deadline(pid, deadline);
-  return 0;
+  int ret = set_deadline(pid, deadline);
+  return ret;
 }
 
 int
@@ -111,10 +111,10 @@ sys_rate(void)
 
   if (argint(0, &pid) < 0)
       return -1;
-  if (argint(0, &rate) < 0)
+  if (argint(1, &rate) < 0)
       return -1;
-  set_rate(pid, rate);
-  return 0;
+  int ret = set_rate(pid, rate);
+  return ret;
 }
 // return how many clock tick interrupts have occurred
 // since start.
@@ -127,4 +127,32 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+int sys_sched_policy(void)
+{
+  int pid,policy;
+
+  if (argint(0, &pid) < 0)
+      return -22;
+  if (argint(1, &policy) < 0)
+      return -22;
+  
+  if (policy == 0)
+  {
+    //EDF
+    if (is_SchedulableEDF(pid) == 1)
+    {
+      cprintf("it can be scheduled\n");
+      yield();
+    }
+    else
+    {
+      cprintf("it cannot be scheduled\n");
+      kill(pid);
+      return -22;
+    }
+
+  }
+  return 0;
 }

@@ -88,6 +88,13 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  
+//  acquire(&tickslock);
+  p->policy = -1;
+  p->arrival_time = ticks;
+  p->elapsed_time = 0;
+  p->isComplete=0;
+//  release(&tickslock);
 
   release(&ptable.lock);
 
@@ -332,6 +339,62 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+    int policy = -1;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE)
+        continue;
+
+      if (p->policy >= 0)
+      {
+        policy = p->policy;
+        break;
+      }
+    }
+    if (policy == 0)
+    {
+    struct proc *p_torun = ptable.proc;
+    int min_deadline = __INT_MAX__;
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE)
+        continue;
+
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      if (p->abs_deadline < min_deadline)
+      {
+        min_deadline = p->abs_deadline;
+        p_torun = p;
+      }else if (p->abs_deadline == min_deadline)
+      {
+        if(p->pid < p_torun->pid)
+        {
+          p_torun = p;
+        }
+      }
+
+    }
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = p_torun;
+      switchuvm(p_torun);
+      p_torun->state = RUNNING;
+      
+
+      swtch(&(c->scheduler), p_torun->context);
+      switchkvm();
+
+      // // Process is done running for now.
+      // // It should have changed its p->state before coming back.
+      c->proc = 0;
+
+    }else if (policy == 1)
+    {
+
+    }else{
+  
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
@@ -350,10 +413,14 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
+   
+    }
+
     release(&ptable.lock);
 
   }
 }
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -387,6 +454,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+  myproc()->elapsed_time++;
   sched();
   release(&ptable.lock);
 }
@@ -553,7 +621,7 @@ set_exec_time(int pid, int exec_time){
     release(&ptable.lock);
 
     if (!found)
-        return -2;
+        return -22;
 
     return 0;
 }
@@ -571,6 +639,7 @@ set_deadline(int pid, int deadline){
             found = 1;
             /* copy string to our buffer. */
             p->deadline = deadline;
+            p->abs_deadline = p->arrival_time + deadline;
             break;
         }
     }
@@ -578,7 +647,7 @@ set_deadline(int pid, int deadline){
     release(&ptable.lock);
 
     if (!found)
-        return -2;
+        return -22;
 
     return 0;
 }
@@ -603,7 +672,36 @@ set_rate(int pid, int rate){
     release(&ptable.lock);
 
     if (!found)
-        return -2;
+        return -22;
 
+    return 0;
+}
+
+int is_SchedulableEDF(int pid){
+  struct proc *p;
+  int utilization = 0;
+
+  acquire (&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    
+    if (p->state!=RUNNING && p->state!=RUNNABLE && p->isComplete!=1) 
+      continue;
+    if(p->killed == 1)
+      continue;
+    if (p->pid == pid){
+      p->policy = 0;
+      break;
+    }
+    cprintf("pid = %d, iscomplete = %d\n", p->pid, p->isComplete);
+    utilization += ((p->exec_time*100)/(p->deadline));   
+  }
+  cprintf("pid = %d, exec_time = %d, deadline = %d", p->pid, p->exec_time, p->deadline);
+  utilization += ((p->exec_time*100)/(p->deadline));
+  cprintf("utilization %d with pid = %d", utilization, pid);
+  release (&ptable.lock);
+  if (utilization <= 100){
+    
+    return 1;
+  }else
     return 0;
 }

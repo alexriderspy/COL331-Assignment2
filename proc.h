@@ -52,6 +52,11 @@ struct proc {
   int exec_time;
   int deadline;
   int rate;
+  int policy;                 //0 if EDF, -1 if RR, 1 if RM
+  int abs_deadline;
+  int arrival_time;
+  int elapsed_time;
+  int isComplete;
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -59,7 +64,3 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
-
-int set_exec_time(int,int);
-int set_deadline(int,int);
-int set_rate(int,int);

@@ -23,3 +23,4 @@
 #define SYS_exec_time 22
 #define SYS_deadline 23
 #define SYS_rate 24
+#define SYS_sched_policy 25
