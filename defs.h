@@ -124,6 +124,7 @@ int             set_exec_time(int,int);
 int             set_deadline(int,int);
 int             set_rate(int,int);
 int             is_SchedulableEDF(int);
+int             is_SchedulableRM(int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

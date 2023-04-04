@@ -131,7 +131,7 @@ sys_uptime(void)
 
 int sys_sched_policy(void)
 {
-  int pid,policy;
+  int pid, policy;
 
   if (argint(0, &pid) < 0)
       return -22;
@@ -141,7 +141,7 @@ int sys_sched_policy(void)
   if (policy == 0)
   {
     //EDF
-    if (is_SchedulableEDF(pid) == 1)
+    if (is_SchedulableEDF(pid) == 0)
     {
       cprintf("it can be scheduled\n");
       yield();
@@ -153,6 +153,21 @@ int sys_sched_policy(void)
       return -22;
     }
 
-  }
+  } 
+  else if (policy == 1)
+  {
+     //RM
+    if (is_SchedulableRM(pid) == 0)
+    {
+      cprintf("it can be scheduled\n");
+      yield();
+    }
+    else
+    {
+      cprintf("it cannot be scheduled\n");
+      kill(pid);
+      return -22;
+    }   
+  } 
   return 0;
 }
