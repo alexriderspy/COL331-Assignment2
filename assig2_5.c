@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
     int exectime[4] = {1, 3, 5, 4};
 
     int parent_pid = getpid();
+    // printf(1, "parent_pid = %d\n", parent_pid);
 
     // Set the scheduling policy to RM
     rate(parent_pid, 2);
@@ -26,6 +27,7 @@ int main(int argc, char *argv[])
         if (cid != 0)
         {
             // Set the scheduling policy to RM
+            // printf(1, "cid = %d\n", cid);
             rate(cid, rate_value[i]);
             exec_time(cid, exectime[i]);
             sched_policy(cid, 1);

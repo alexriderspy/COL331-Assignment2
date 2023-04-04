@@ -7,7 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 
-#define MAX(a,b) a ? a > b : b
+#define MAX(a,b) a > b ? a : b
 #define CEIL_DIV(a,b) a / b + (a % b != 0)
 #define POW2(n) 1 << n 
 
@@ -408,8 +408,8 @@ scheduler(void)
         //   return -22;
         // }
 
-        // use ceil instead of floor
         int w = MAX(1, CEIL_DIV((90 - 3 * p->rate), 29));
+        // cprintf("w of proc %d = %d \n", p->pid, w);
         if (w < w_min)
         {
           // set p_next to higher priority process
@@ -426,6 +426,7 @@ scheduler(void)
         }
       }
 
+      // cprintf("schedule proc %d \n", p_next->pid);
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -728,7 +729,10 @@ int is_SchedulableRM(int pid)
     struct proc *p;
     int utilization = 0;
     int num_jobs = 0;
-    int found = 0;
+
+    // Liu Layland bounds
+    // 100 * n * (pow(2, 1/n) - 1)   
+    int bounds[64] = {100, 82, 77, 75, 74, 73, 72, 72, 72, 71, 71, 71, 71, 71, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69};
 
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -739,29 +743,26 @@ int is_SchedulableRM(int pid)
         if (p->killed == 1)
             continue;
 
-        cprintf("pid = %d, iscomplete = %d\n", p->pid, p->isComplete);
-        utilization += p->exec_time * p->rate;
-        num_jobs++;
-
         if (p->pid == pid)
         {
             p->policy = 1;
-            found = 1;
             break;
-        }
-    }
-    cprintf("pid = %d, exec_time = %d, deadline = %d", p->pid, p->exec_time, p->deadline);
-    // utilization += p->exec_time * p->rate;
-    // num_jobs++;
+        }            
 
-    cprintf("utilization %d with pid = %d", utilization, pid);
+        // cprintf("pid = %d, iscomplete = %d\n", p->pid, p->isComplete);
+        utilization += p->exec_time * p->rate;
+        num_jobs++;
+    }
+    // cprintf("pid = %d, exec_time = %d, rate = %d\n", p->pid, p->exec_time, p->rate);
+    utilization += p->exec_time * p->rate;
+    num_jobs++;
+
+    // cprintf("utilization %d with pid = %d\n", utilization, pid);
     release(&ptable.lock);
 
-    // check for Liu Layland bound instead
-    // if (u > n * (pow(2, 1/n) - 1))
-
-    // 100 because exec_time is in the unit of ticks (10 ms)
-    if (utilization <= 100 && found == 1)
+    // check for Liu Layland bound
+    // x100 because exec_time is in the unit of ticks (10 ms)
+    if (utilization <= bounds[num_jobs - 1])
     {
         return 0;
     }
@@ -773,7 +774,6 @@ int is_SchedulableEDF(int pid)
 {
     struct proc *p;
     int utilization = 0;
-    int found = 0;
 
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -784,21 +784,20 @@ int is_SchedulableEDF(int pid)
         if (p->killed == 1)
             continue;
 
-        cprintf("pid = %d, iscomplete = %d\n", p->pid, p->isComplete);
-        utilization += ((p->exec_time * 100) / (p->deadline));
-
         if (p->pid == pid)
         {
             p->policy = 0;
-            found = 1;
             break;
         }
+
+        // cprintf("pid = %d, iscomplete = %d\n", p->pid, p->isComplete);
+        utilization += ((p->exec_time * 100) / (p->deadline));
     }
-    cprintf("pid = %d, exec_time = %d, deadline = %d", p->pid, p->exec_time, p->deadline);
-    // utilization += ((p->exec_time*100)/(p->deadline));
-    cprintf("utilization %d with pid = %d", utilization, pid);
+    // cprintf("pid = %d, exec_time = %d, deadline = %d \n", p->pid, p->exec_time, p->deadline);
+    utilization += ((p->exec_time*100)/(p->deadline));
+    // cprintf("utilization %d with pid = %d\n", utilization, pid);
     release(&ptable.lock);
-    if (utilization <= 100 && found == 1)
+    if (utilization <= 100)
     {
         return 0;
     }

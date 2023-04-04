@@ -143,12 +143,12 @@ int sys_sched_policy(void)
     //EDF
     if (is_SchedulableEDF(pid) == 0)
     {
-      cprintf("it can be scheduled\n");
+      // cprintf("it can be scheduled\n");
       yield();
     }
     else
     {
-      cprintf("it cannot be scheduled\n");
+      // cprintf("it cannot be scheduled\n");
       kill(pid);
       return -22;
     }
@@ -159,12 +159,12 @@ int sys_sched_policy(void)
      //RM
     if (is_SchedulableRM(pid) == 0)
     {
-      cprintf("it can be scheduled\n");
+      // cprintf("it can be scheduled\n");
       yield();
     }
     else
     {
-      cprintf("it cannot be scheduled\n");
+      // cprintf("it cannot be scheduled\n");
       kill(pid);
       return -22;
     }   
