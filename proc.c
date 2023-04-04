@@ -95,9 +95,6 @@ found:
   
 //  acquire(&tickslock);
   p->policy = -1;
-  p->arrival_time = ticks;
-  p->elapsed_time = 0;
-  p->isComplete=0;
 //  release(&tickslock);
 
   release(&ptable.lock);
@@ -745,6 +742,10 @@ int is_SchedulableRM(int pid)
 
         if (p->pid == pid)
         {
+            p->arrival_time = ticks;
+            
+            p->elapsed_time = 0;
+            p->isComplete=0;
             p->policy = 1;
             break;
         }            
@@ -786,7 +787,12 @@ int is_SchedulableEDF(int pid)
 
         if (p->pid == pid)
         {
+            p->abs_deadline=p->arrival_time + p->deadline;
             p->policy = 0;
+            p->arrival_time = ticks;
+            p->elapsed_time = 0;
+            p->isComplete=0;
+
             break;
         }
 
